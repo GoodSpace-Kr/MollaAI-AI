@@ -23,7 +23,9 @@ PRE_ROLL_SECONDS = 0.5
 MAX_UTTERANCE_SECONDS = 30
 PARTIAL_UPDATE_INTERVAL_SECONDS = float(os.getenv("PARTIAL_UPDATE_INTERVAL_SECONDS", "1.0"))
 MIN_PARTIAL_AUDIO_SECONDS = float(os.getenv("MIN_PARTIAL_AUDIO_SECONDS", "1.0"))
-END_GRACE_SECONDS = float(os.getenv("END_GRACE_SECONDS", "1.2"))
+END_GRACE_SECONDS = float(os.getenv("END_GRACE_SECONDS", "0.8"))
+STABLE_WORD_COUNT_THRESHOLD = int(os.getenv("STABLE_WORD_COUNT_THRESHOLD", "3"))
+STABLE_WORD_AGE_SECONDS = float(os.getenv("STABLE_WORD_AGE_SECONDS", "0.3"))
 DEFAULT_LANGUAGE = os.getenv("WHISPER_LANGUAGE", "ko")
 WHISPER_CPP_BIN = os.getenv("WHISPER_CPP_BIN", "")
 WHISPER_MODEL_PATH = os.getenv("WHISPER_MODEL_PATH", "")
@@ -142,6 +144,19 @@ class TranscriptionRequest:
     revision: int
     kind: str
     audio: np.ndarray
+
+
+@dataclass
+class WordSlot:
+    word: str
+    seen_count: int
+    first_seen_at: float
+
+
+@dataclass
+class TranscriptSegments:
+    stable_text: str
+    unstable_text: str
 
 
 class SpeechSession:
@@ -280,34 +295,111 @@ class TranscriptionDispatcher:
             self._condition.notify_all()
 
 
-class TranscriptRenderer:
+class StreamingTranscriptRenderer:
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._current_text = ""
-        self._current_width = 0
+        self._stable_words: list[str] = []
+        self._unstable_slots: list[WordSlot] = []
+        self._rendered_lines = 0
 
-    def _write_line(self, prefix: str, text: str, finalize: bool) -> None:
-        line = f"{prefix} {text}".rstrip()
-        clear_width = max(0, self._current_width - len(line))
-        sys.stdout.write("\r" + line + (" " * clear_width))
-        if finalize:
-            sys.stdout.write("\n")
-            self._current_text = ""
-            self._current_width = 0
-        else:
-            self._current_text = text
-            self._current_width = len(line)
+    def _write_block(self, lines: list[str], finalize: bool) -> None:
+        if self._rendered_lines:
+            sys.stdout.write(f"\x1b[{self._rendered_lines}A")
+
+        for index, line in enumerate(lines):
+            sys.stdout.write("\r\x1b[2K" + line)
+            if index < len(lines) - 1 or finalize:
+                sys.stdout.write("\n")
+
+        self._rendered_lines = len(lines)
         sys.stdout.flush()
 
-    def render_partial(self, text: str) -> None:
+    def _split_words(self, text: str) -> list[str]:
+        return [word for word in text.strip().split() if word]
+
+    def get_segments(self) -> TranscriptSegments:
         with self._lock:
-            if text == self._current_text:
+            return TranscriptSegments(
+                stable_text=" ".join(self._stable_words).strip(),
+                unstable_text=" ".join(slot.word for slot in self._unstable_slots).strip(),
+            )
+
+    def get_segment_texts(self) -> tuple[str, str]:
+        segments = self.get_segments()
+        return segments.stable_text, segments.unstable_text
+
+    def _render(self, finalize: bool = False) -> None:
+        stable_text = " ".join(self._stable_words).strip()
+        unstable_text = " ".join(slot.word for slot in self._unstable_slots).strip()
+        lines = [
+            f"[STABLE] {stable_text}".rstrip(),
+            f"[UNSTABLE] {unstable_text}".rstrip(),
+        ]
+        self._write_block(lines, finalize=finalize)
+
+    def render_partial(self, text: str, now: float) -> None:
+        with self._lock:
+            words = self._split_words(text)
+            if not words and not self._unstable_slots:
                 return
-            self._write_line("[STT]", text, finalize=False)
+
+            if self._stable_words and words[: len(self._stable_words)] == self._stable_words:
+                suffix_words = words[len(self._stable_words) :]
+            else:
+                suffix_words = words
+
+            current_words = [slot.word for slot in self._unstable_slots]
+            common_prefix_len = 0
+            for old_word, new_word in zip(current_words, suffix_words):
+                if old_word != new_word:
+                    break
+                common_prefix_len += 1
+
+            preserved_slots = self._unstable_slots[:common_prefix_len]
+            updated_slots = [
+                WordSlot(
+                    word=slot.word,
+                    seen_count=slot.seen_count + 1,
+                    first_seen_at=slot.first_seen_at,
+                )
+                for slot in preserved_slots
+            ]
+
+            for word in suffix_words[common_prefix_len:]:
+                updated_slots.append(WordSlot(word=word, seen_count=1, first_seen_at=now))
+
+            self._unstable_slots = updated_slots
+            self._promote_stable_words(now)
+            self._render(finalize=False)
+
+    def _promote_stable_words(self, now: float) -> None:
+        stable_count = 0
+        for slot in self._unstable_slots:
+            if slot.seen_count >= STABLE_WORD_COUNT_THRESHOLD or (
+                now - slot.first_seen_at >= STABLE_WORD_AGE_SECONDS
+            ):
+                stable_count += 1
+            else:
+                break
+
+        if stable_count == 0:
+            return
+
+        self._stable_words.extend(slot.word for slot in self._unstable_slots[:stable_count])
+        self._unstable_slots = self._unstable_slots[stable_count:]
 
     def render_final(self, text: str) -> None:
         with self._lock:
-            self._write_line("[STT]", text, finalize=True)
+            words = self._split_words(text)
+            self._stable_words = words
+            self._unstable_slots = []
+            self._render(finalize=True)
+
+    def reset(self) -> None:
+        with self._lock:
+            self._stable_words = []
+            self._unstable_slots = []
+            self._rendered_lines = 0
 
 
 audio_queue: "queue.Queue[np.ndarray]" = queue.Queue(maxsize=256)
@@ -330,7 +422,11 @@ def callback(indata, frames, time_info, status):
 vad_iterator = VADIterator(model, threshold=0.5, sampling_rate=SAMPLE_RATE)
 
 
-def vad_worker(session: SpeechSession, dispatcher: TranscriptionDispatcher):
+def vad_worker(
+    session: SpeechSession,
+    dispatcher: TranscriptionDispatcher,
+    renderer: "StreamingTranscriptRenderer",
+):
     while not stop_event.is_set():
         try:
             chunk = audio_queue.get(timeout=0.1)
@@ -343,6 +439,7 @@ def vad_worker(session: SpeechSession, dispatcher: TranscriptionDispatcher):
         requests, is_start, is_end = session.push_chunk(chunk, speech_event, now)
 
         if is_start:
+            renderer.reset()
             print("\n🎤 [말 시작됨]")
 
         for request in requests:
@@ -355,7 +452,7 @@ def vad_worker(session: SpeechSession, dispatcher: TranscriptionDispatcher):
 def transcription_worker(
     transcriber: WhisperCppTranscriber,
     dispatcher: TranscriptionDispatcher,
-    renderer: TranscriptRenderer,
+    renderer: StreamingTranscriptRenderer,
 ):
     while True:
         request = dispatcher.get()
@@ -371,7 +468,7 @@ def transcription_worker(
                 continue
 
             if request.kind == "partial":
-                renderer.render_partial(text)
+                renderer.render_partial(text, time.monotonic())
             else:
                 renderer.render_final(text)
         except Exception as exc:
@@ -387,9 +484,13 @@ def main():
         language=DEFAULT_LANGUAGE,
     )
     dispatcher = TranscriptionDispatcher()
-    renderer = TranscriptRenderer()
+    renderer = StreamingTranscriptRenderer()
 
-    vad_thread = threading.Thread(target=vad_worker, args=(session, dispatcher), daemon=True)
+    vad_thread = threading.Thread(
+        target=vad_worker,
+        args=(session, dispatcher, renderer),
+        daemon=True,
+    )
     stt_thread = threading.Thread(
         target=transcription_worker,
         args=(transcriber, dispatcher, renderer),

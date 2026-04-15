@@ -34,6 +34,12 @@
 - `END_GRACE_SECONDS`
   - `VAD end` 이후 최종 전사를 확정하기 전에 더 기다리는 시간
   - 기본값은 `1.2`
+- `STABLE_WORD_COUNT_THRESHOLD`
+  - 같은 단어가 연속 partial에서 몇 번 유지되면 stable로 넘길지
+  - 기본값은 `3`
+- `STABLE_WORD_AGE_SECONDS`
+  - 같은 단어가 이 시간 이상 안 바뀌면 stable로 넘길지
+  - 기본값은 `0.3`
 
 ## 실행
 
@@ -50,7 +56,10 @@ python3 app.py
 ## 참고
 
 - `app.py`는 콜백에서 무거운 STT 처리를 하지 않고, 별도 worker thread에서 VAD와 Whisper를 처리합니다.
-- 부분 전사는 `"[STT]"` 한 줄을 덮어쓰는 방식으로 갱신됩니다.
+- 부분 전사는 두 줄로 갱신됩니다.
+- `[STABLE] ...`
+- `[UNSTABLE] ...`
+- 렌더러 내부 상태는 `get_segments()`로 `stable_text`, `unstable_text`를 따로 꺼낼 수 있습니다.
 - `VAD end` 직후 바로 확정하지 않고 `END_GRACE_SECONDS`만큼 더 기다렸다가, 다시 말이 이어지면 같은 문장으로 계속 이어갑니다.
 - whisper.cpp 바이너리의 옵션은 현재 코드가 공용 플래그를 사용하도록 맞춰 두었습니다. 사용 중인 빌드의 인자 형식이 다르면 `WHISPER_CPP_BIN`으로 실제 실행 파일을 지정하세요.
 - `failed to initialize whisper context`가 나오면 먼저 `WHISPER_NO_GPU=1` 상태인지 확인하세요. 이 프로젝트의 현재 `whisper-cli`는 `-ng` 옵션으로 정상 동작했습니다.
