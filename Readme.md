@@ -28,3 +28,4 @@
 - TTS PCM 재생 시 2바이트 경계 정렬을 추가함
 - 디버그용 원시 PCM 파일 `tts_debug.pcm` 저장을 추가함
 - TTS 출력 설정과 PCM 청크 바이트 길이 로그를 추가함
+- `Pipeline to first TTS audio latency`를 추가해 `LLM 입력 시작 -> TTS 첫 오디오 출력` 시간을 바로 볼 수 있게 함

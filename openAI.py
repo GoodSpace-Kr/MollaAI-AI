@@ -50,12 +50,10 @@ def call_gpt_stream(prompt: str) -> str:
     with client.responses.stream(
         model=MODEL,
         input=(
-            "Talk like an English conversation teacher. "
-            "Keep the answer concise and natural.\n"
-            "IMPORTANT: Keep your response very short, maximum 3 sentences."
+            "Reply briefly (max short 3 sentences) like an English teacher.\n"
             f"User prompt: {prompt}"
         ),
-        max_output_tokens=100,
+        max_output_tokens=50,
     ) as stream:
         for event in stream:
             if event.type == "response.output_text.delta":
@@ -92,7 +90,7 @@ def call_gpt_stream(prompt: str) -> str:
     return text
 
 
-def play_pcm_stream_from_tts(text: str) -> None:
+def play_pcm_stream_from_tts(text: str, pipeline_start: float | None = None) -> None:
     start = time.perf_counter()
     first_audio_at = None
     pending = b""
@@ -147,6 +145,11 @@ def play_pcm_stream_from_tts(text: str) -> None:
                         f"TTS first audio chunk latency: {first_audio_at - start:.2f}s",
                         flush=True,
                     )
+                    if pipeline_start is not None:
+                        print(
+                            f"Pipeline to first TTS audio latency: {first_audio_at - pipeline_start:.2f}s",
+                            flush=True,
+                        )
                 stream.write(chunk)
 
             if pending:
@@ -170,7 +173,7 @@ def measure_pipeline(prompt: str) -> None:
     print("\n--- TTS input text ---")
     print(llm_text, flush=True)
     print("--- TTS input text end ---\n")
-    play_pcm_stream_from_tts(llm_text)
+    play_pcm_stream_from_tts(llm_text, pipeline_start=pipeline_start)
 
     total = time.perf_counter() - pipeline_start
     print(f"Pipeline total time: {total:.2f}s", flush=True)
