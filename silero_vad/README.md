@@ -55,6 +55,11 @@ python3 app.py
 
 ## 참고
 
+- 코드 구조
+  - `app.py`: 오디오 스트림, VAD, worker thread를 연결하는 진입점
+  - `speech_session.py`: 발화 누적, partial/final 요청 생성
+  - `transcription_runtime.py`: whisper.cpp 실행, partial/final 렌더링, stable/unstable 상태 보관
+  - `settings.py`: 환경변수와 공통 설정
 - `app.py`는 콜백에서 무거운 STT 처리를 하지 않고, 별도 worker thread에서 VAD와 Whisper를 처리합니다.
 - 부분 전사는 두 줄로 갱신됩니다.
 - `[STABLE] ...`
