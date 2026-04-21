@@ -33,7 +33,7 @@
   - 기본값은 `1.0`
 - `END_GRACE_SECONDS`
   - `VAD end` 이후 최종 전사를 확정하기 전에 더 기다리는 시간
-  - 기본값은 `1.2`
+  - 기본값은 `0.6`
 - `STABLE_WORD_COUNT_THRESHOLD`
   - 같은 단어가 연속 partial에서 몇 번 유지되면 stable로 넘길지
   - 기본값은 `3`
@@ -49,7 +49,7 @@ export WHISPER_CPP_BIN="/absolute/path/to/whisper-cli"
 export WHISPER_LANGUAGE="en"
 export WHISPER_NO_GPU="1"
 export PARTIAL_UPDATE_INTERVAL_SECONDS="1.0"
-export END_GRACE_SECONDS="1.2"
+export END_GRACE_SECONDS="0.6"
 python3 app.py
 ```
 
@@ -60,11 +60,16 @@ python3 app.py
   - `speech_session.py`: 발화 누적, partial/final 요청 생성
   - `transcription_runtime.py`: whisper.cpp 실행, partial/final 렌더링, stable/unstable 상태 보관
   - `settings.py`: 환경변수와 공통 설정
+- 출력 흐름
+  - `WhisperCppTranscriber.transcribe()`가 whisper.cpp 결과를 문자열 `text`로 반환합니다.
+  - `text`는 `transcription_worker()`에서 받아서 `render_partial()` 또는 `render_final()`로 전달됩니다.
+  - 화면의 `[STABLE]` / `[UNSTABLE]`는 `text`를 다시 분해해서 만든 렌더러 내부 상태입니다.
 - `app.py`는 콜백에서 무거운 STT 처리를 하지 않고, 별도 worker thread에서 VAD와 Whisper를 처리합니다.
 - 부분 전사는 두 줄로 갱신됩니다.
 - `[STABLE] ...`
 - `[UNSTABLE] ...`
 - 렌더러 내부 상태는 `get_segments()`로 `stable_text`, `unstable_text`를 따로 꺼낼 수 있습니다.
 - `VAD end` 직후 바로 확정하지 않고 `END_GRACE_SECONDS`만큼 더 기다렸다가, 다시 말이 이어지면 같은 문장으로 계속 이어갑니다.
+- `VAD end` 이후 final 제출은 별도 타이머 스레드가 처리합니다.
 - whisper.cpp 바이너리의 옵션은 현재 코드가 공용 플래그를 사용하도록 맞춰 두었습니다. 사용 중인 빌드의 인자 형식이 다르면 `WHISPER_CPP_BIN`으로 실제 실행 파일을 지정하세요.
 - `failed to initialize whisper context`가 나오면 먼저 `WHISPER_NO_GPU=1` 상태인지 확인하세요. 이 프로젝트의 현재 `whisper-cli`는 `-ng` 옵션으로 정상 동작했습니다.

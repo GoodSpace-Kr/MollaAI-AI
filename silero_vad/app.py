@@ -74,6 +74,16 @@ def vad_worker(
             print("\n😶 [말 끝남]")
 
 
+def end_timer_worker(
+    session: SpeechSession,
+    dispatcher: TranscriptionDispatcher,
+) -> None:
+    while not stop_event.is_set():
+        for request in session.poll_due_final(time.monotonic()):
+            dispatcher.submit(request)
+        time.sleep(0.05)
+
+
 def transcription_worker(
     transcriber: WhisperCppTranscriber,
     dispatcher: TranscriptionDispatcher,
@@ -112,12 +122,18 @@ def main():
         args=(session, dispatcher, renderer),
         daemon=True,
     )
+    end_timer_thread = threading.Thread(
+        target=end_timer_worker,
+        args=(session, dispatcher),
+        daemon=True,
+    )
     stt_thread = threading.Thread(
         target=transcription_worker,
         args=(transcriber, dispatcher, renderer),
         daemon=True,
     )
     vad_thread.start()
+    end_timer_thread.start()
     stt_thread.start()
 
     print("VAD 감지 시작 (512 샘플 / 32ms 단위)...")
