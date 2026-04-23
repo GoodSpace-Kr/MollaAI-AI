@@ -1,0 +1,51 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from enum import Enum
+
+
+class TranscriptKind(str, Enum):
+    PARTIAL = "partial"
+    FINAL = "final"
+
+
+#세션별 오디오 덩어리 - Chunk
+@dataclass(frozen=True, slots=True)
+class AudioChunk:
+    session_id: str
+    chunk_index: int
+    samples: bytes
+    sample_rate: int
+    channels: int
+    created_at: float
+
+#STT 결과 1개
+@dataclass(frozen=True, slots=True)
+class TranscriptSegment:
+    session_id: str
+    kind: TranscriptKind
+    text: str
+    created_at: float
+    revision: int = 0
+    confidence: float | None = None
+
+#세션 진행 상태
+@dataclass(slots=True)
+class SttSessionState:
+    session_id: str
+    started_at: float
+    last_audio_at: float | None = None
+    ended_at: float | None = None
+    chunk_index: int = 0
+    revision: int = 0
+    stable_text: str = ""
+    unstable_text: str = ""
+    metadata: dict[str, str] = field(default_factory=dict)
+
+    def next_chunk_index(self) -> int:
+        self.chunk_index += 1
+        return self.chunk_index
+
+    def next_revision(self) -> int:
+        self.revision += 1
+        return self.revision
