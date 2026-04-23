@@ -77,7 +77,7 @@ STT 전용으로는 `module/stt/requirements.txt`도 있습니다.
 - `./whisper.cpp/main`
 - `./main`
 
-모델 파일은 기본적으로 `whisper.cpp/models/ggml-base.en.bin`을 찾습니다.
+모델 파일은 기본적으로 `whisper.cpp/models/ggml-tiny.bin`을 찾습니다.
 별도 모델을 쓰려면 `WHISPER_MODEL_PATH`를 지정하세요.
 
 ### 3. 오디오 재생 도구

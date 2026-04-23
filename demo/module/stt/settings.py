@@ -65,4 +65,4 @@ STABLE_WORD_AGE_SECONDS = float(os.getenv("STABLE_WORD_AGE_SECONDS", "0.3"))
 DEFAULT_LANGUAGE = os.getenv("WHISPER_LANGUAGE", "ko")
 WHISPER_CPP_BIN = os.getenv("WHISPER_CPP_BIN", "")
 WHISPER_MODEL_PATH = os.getenv("WHISPER_MODEL_PATH", "")
-WHISPER_NO_GPU = os.getenv("WHISPER_NO_GPU", "1") != "0"
+WHISPER_NO_GPU = os.getenv("WHISPER_NO_GPU", "1") != "1"

@@ -1,7 +1,7 @@
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    BitsAndBytesConfig,
+    #BitsAndBytesConfig,
     pipeline,
     GenerationConfig,
 )
@@ -13,11 +13,11 @@ warnings.filterwarnings("ignore")
 
 MODEL_NAME = "Qwen/Qwen3-4B"
 
-quantization_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_compute_dtype=torch.bfloat16,
-    bnb_4bit_quant_type="nf4",
-)
+# quantization_config = BitsAndBytesConfig(
+#     load_in_4bit=True,
+#     bnb_4bit_compute_dtype=torch.bfloat16,
+#     bnb_4bit_quant_type="nf4",
+# )
 
 gen_config = GenerationConfig(
     max_new_tokens=200,
@@ -36,7 +36,7 @@ class QwenChat:
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype="auto",
-            quantization_config=quantization_config,
+            #quantization_config=quantization_config,
             device_map="auto",
             cache_dir=cache_dir,
         )
