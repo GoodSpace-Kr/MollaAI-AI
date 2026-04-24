@@ -106,20 +106,6 @@ class AudioBuffer:
         self._discard_obsolete_prefix()
         return window
 
-    def pop_final_window(self) -> StreamingAudioWindow | None:
-        buffer_end = self._base_sample_index + self._total_samples
-        if buffer_end <= self._next_emit_sample:
-            return None
-
-        window = self._build_window(
-            chunk_start=self._next_emit_sample,
-            chunk_end=buffer_end,
-            pad_right=True,
-        )
-        self._next_emit_sample = buffer_end
-        self._discard_obsolete_prefix()
-        return window
-
     def snapshot_chunk(self, start_index: int, end_index: int) -> AudioChunk:
         audio = self._slice_absolute(start_index, end_index)
         return AudioChunk(

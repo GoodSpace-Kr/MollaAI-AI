@@ -106,17 +106,6 @@ async def _handle_text_message(
         )
         return
 
-    if message_type == "finalize":
-        result = service.finalize_session(finalized_at=time.time())
-        await _emit_result(websocket, result.events)
-        await _send_ack(
-            websocket,
-            "finalized",
-            "STT session finalized",
-            service.state.session_id if service.state else None,
-        )
-        return
-
     if message_type == "reset":
         service.reset_session()
         await _send_ack(websocket, "reset", "STT session reset")
@@ -150,14 +139,14 @@ def _extract_config(payload: dict) -> SttConfig | None:
         chunk_secs=float(raw_config.get("chunk_secs", 2.0)),
         left_context_secs=float(raw_config.get("left_context_secs", 10.0)),
         right_context_secs=float(raw_config.get("right_context_secs", 2.0)),
-        min_partial_audio_secs=float(raw_config.get("min_partial_audio_secs", 1.0)),
-        partial_update_interval_secs=float(raw_config.get("partial_update_interval_secs", 1.0)),
-        max_utterance_secs=float(raw_config.get("max_utterance_secs", 30.0)),
         batch_size=int(raw_config.get("batch_size", 1)),
         model_name=str(raw_config.get("model_name", "")),
         model_path=str(raw_config.get("model_path", "")),
         language=str(raw_config.get("language", "en")),
         use_timestamps=bool(raw_config.get("use_timestamps", False)),
+        speech_rms_threshold=float(raw_config.get("speech_rms_threshold", 0.01)),
+        pause_timeout_secs=float(raw_config.get("pause_timeout_secs", 1.0)),
+        partial_repeat_threshold=int(raw_config.get("partial_repeat_threshold", 2)),
     )
 
 

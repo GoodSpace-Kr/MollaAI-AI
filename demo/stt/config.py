@@ -63,14 +63,14 @@ class SttConfig:
     chunk_secs: float = 2.0
     left_context_secs: float = 10.0
     right_context_secs: float = 2.0
-    min_partial_audio_secs: float = 1.0
-    partial_update_interval_secs: float = 1.0
-    max_utterance_secs: float = 30.0
     batch_size: int = 1
     model_name: str = ""
     model_path: str = ""
     language: str = "en"
     use_timestamps: bool = False
+    speech_rms_threshold: float = 0.01
+    pause_timeout_secs: float = 1.0
+    partial_repeat_threshold: int = 2
 
     @classmethod
     def from_env(cls) -> SttConfig:
@@ -80,12 +80,12 @@ class SttConfig:
             chunk_secs=float(os.getenv("STT_CHUNK_SECS", "2.0")),
             left_context_secs=float(os.getenv("STT_LEFT_CONTEXT_SECS", "10.0")),
             right_context_secs=float(os.getenv("STT_RIGHT_CONTEXT_SECS", "2.0")),
-            min_partial_audio_secs=float(os.getenv("STT_MIN_PARTIAL_AUDIO_SECS", "1.0")),
-            partial_update_interval_secs=float(os.getenv("STT_PARTIAL_UPDATE_INTERVAL_SECS", "1.0")),
-            max_utterance_secs=float(os.getenv("STT_MAX_UTTERANCE_SECS", "30.0")),
             batch_size=int(os.getenv("STT_BATCH_SIZE", "1")),
             model_name=os.getenv("STT_MODEL_NAME", ""),
             model_path=os.getenv("STT_MODEL_PATH", ""),
             language=os.getenv("STT_LANGUAGE", "en"),
             use_timestamps=os.getenv("STT_USE_TIMESTAMPS", "0") == "1",
+            speech_rms_threshold=float(os.getenv("STT_SPEECH_RMS_THRESHOLD", "0.01")),
+            pause_timeout_secs=float(os.getenv("STT_PAUSE_TIMEOUT_SECS", "1.0")),
+            partial_repeat_threshold=int(os.getenv("STT_PARTIAL_REPEAT_THRESHOLD", "2")),
         )

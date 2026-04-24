@@ -33,12 +33,11 @@ class TranscriptSegment:
 class SttSessionState:
     session_id: str
     started_at: float
-    last_audio_at: float | None = None
-    ended_at: float | None = None
+    last_speech_at: float | None = None
+    last_partial_text: str = ""
+    partial_repeat_count: int = 0
     chunk_index: int = 0
     revision: int = 0
-    stable_text: str = ""
-    unstable_text: str = ""
     metadata: dict[str, str] = field(default_factory=dict)
 
     def next_chunk_index(self) -> int:

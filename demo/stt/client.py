@@ -66,8 +66,6 @@ def main() -> None:
                 print(payload.get("message", "ready"))
             elif message_type == "started":
                 print(f"session started: {payload.get('session_id', '')}")
-            elif message_type == "finalized":
-                print("session finalized")
             elif message_type == "reset":
                 print("session reset")
             elif message_type == "error":
@@ -116,10 +114,6 @@ def main() -> None:
 
                 ws.send(chunk, opcode=ABNF.OPCODE_BINARY)
     finally:
-        try:
-            ws.send(json.dumps({"type": "finalize"}))
-        except Exception:
-            pass
         stop_event.set()
         time.sleep(0.2)
         try:
