@@ -161,6 +161,7 @@ def _validate_session_config(requested: SttConfig, actual: SttConfig) -> None:
 
 async def _emit_result(websocket: WebSocket, events: list[TranscriptSegment]) -> None:
     for event in events:
+        print(f"[{event.kind.value.upper()}] {event.text}", flush=True)
         await websocket.send_json(
             {
                 "type": event.kind.value,

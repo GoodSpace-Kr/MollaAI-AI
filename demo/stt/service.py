@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 import time
 import uuid
 
@@ -119,11 +120,13 @@ class STTService:
         if not cleaned:
             return None
 
-        if cleaned == state.last_partial_text:
+        partial_key = self._partial_key(cleaned)
+        if partial_key == state.last_partial_key:
             state.partial_repeat_count += 1
             return None
 
         state.last_partial_text = cleaned
+        state.last_partial_key = partial_key
         state.partial_repeat_count = 1
         return TranscriptSegment(
             session_id=state.session_id,
@@ -161,4 +164,9 @@ class STTService:
     def _reset_utterance_state(self, state: SttSessionState) -> None:
         state.last_speech_at = None
         state.last_partial_text = ""
+        state.last_partial_key = ""
         state.partial_repeat_count = 0
+
+    def _partial_key(self, text: str) -> str:
+        normalized = re.sub(r"[^\w\s]", "", text.lower())
+        return " ".join(normalized.split())

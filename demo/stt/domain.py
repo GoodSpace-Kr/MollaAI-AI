@@ -35,6 +35,7 @@ class SttSessionState:
     started_at: float
     last_speech_at: float | None = None
     last_partial_text: str = ""
+    last_partial_key: str = ""
     partial_repeat_count: int = 0
     chunk_index: int = 0
     revision: int = 0
