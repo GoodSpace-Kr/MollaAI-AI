@@ -1,6 +1,32 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
+
+
+class TranscriptKind(str, Enum):
+    PARTIAL = "partial"
+    FINAL = "final"
+
+
+@dataclass(frozen=True, slots=True)
+class AudioChunk:
+    session_id: str
+    chunk_index: int
+    samples: bytes
+    sample_rate: int
+    channels: int
+    created_at: float
+
+
+@dataclass(frozen=True, slots=True)
+class TranscriptSegment:
+    session_id: str
+    kind: TranscriptKind
+    text: str
+    created_at: float
+    revision: int = 0
+    confidence: float | None = None
 
 
 @dataclass(slots=True)

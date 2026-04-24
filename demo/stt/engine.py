@@ -3,12 +3,16 @@ from __future__ import annotations
 import tempfile
 import wave
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import numpy as np
 
-from ..audio.buffer import StreamingAudioWindow
-from ..config import SttConfig
+from .audio import StreamingAudioWindow
+from .config import SttConfig
+
+
+class TranscriptAdapter(Protocol):
+    def transcribe_window(self, window: StreamingAudioWindow, config: SttConfig) -> str: ...
 
 
 class NemoAsrAdapter:

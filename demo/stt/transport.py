@@ -7,10 +7,10 @@ from typing import Callable
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from ..audio.codec import AudioEncoding, decode_audio_payload
-from ..config import SttConfig
-from ..domain.models import TranscriptSegment
-from ..services.transcription import STTService
+from .audio import AudioEncoding, decode_audio_payload
+from .config import SttConfig
+from .domain import TranscriptSegment
+from .service import STTService
 
 
 @dataclass(frozen=True, slots=True)

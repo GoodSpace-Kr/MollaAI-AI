@@ -1,8 +1,9 @@
-from .adapters.nemo import NemoAsrAdapter
-from .api import WebSocketSttOptions, create_stt_router
+from .app import app
 from .config import SttConfig
 from .domain import AudioChunk, SttSessionState, TranscriptKind, TranscriptSegment
-from .services.transcription import STTEmitResult, STTService
+from .engine import NemoAsrAdapter, TranscriptAdapter
+from .service import STTEmitResult, STTService
+from .transport import WebSocketSttOptions, create_stt_router
 
 __all__ = [
     "AudioChunk",
@@ -11,8 +12,10 @@ __all__ = [
     "STTService",
     "SttConfig",
     "SttSessionState",
+    "TranscriptAdapter",
     "TranscriptKind",
     "TranscriptSegment",
     "WebSocketSttOptions",
+    "app",
     "create_stt_router",
 ]

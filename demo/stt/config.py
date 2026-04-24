@@ -34,10 +34,7 @@ def _parse_env_line(line: str) -> tuple[str, str] | None:
 
 
 def _load_dotenv() -> None:
-    # 협업용 기본 규칙:
-    # - 저장소의 .env.example을 기준으로
-    # - 각자 로컬의 .env에서 값을 덮어쓴다.
-    project_root = Path(__file__).resolve().parents[2]
+    project_root = Path(__file__).resolve().parents[1]
     candidate_paths = [Path.cwd() / ".env", project_root / ".env"]
 
     seen: set[Path] = set()

@@ -6,10 +6,10 @@ import uuid
 
 import numpy as np
 
-from ..adapters.base import TranscriptAdapter
-from ..audio.buffer import AudioBuffer, StreamingAudioWindow
-from ..config import SttConfig
-from ..domain import SttSessionState, TranscriptKind, TranscriptSegment
+from .audio import AudioBuffer, StreamingAudioWindow
+from .config import SttConfig
+from .domain import SttSessionState, TranscriptKind, TranscriptSegment
+from .engine import TranscriptAdapter
 
 
 @dataclass(frozen=True, slots=True)
