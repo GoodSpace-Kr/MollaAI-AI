@@ -11,6 +11,13 @@ import sounddevice as sd
 from websocket import ABNF, create_connection
 
 
+def _shorten(text: str, limit: int = 80) -> str:
+    text = " ".join(text.split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Stream microphone audio to the STT websocket.")
     parser.add_argument("--url", default="ws://127.0.0.1:8000/stt/ws", help="STT websocket URL")
@@ -53,7 +60,8 @@ def main() -> None:
 
             message_type = payload.get("type")
             if message_type in ("partial", "final"):
-                print(f"[{message_type.upper()}] {payload.get('text', '')}")
+                text = str(payload.get("text", ""))
+                print(f"[{message_type.upper()}] {_shorten(text)}")
             elif message_type == "ready":
                 print(payload.get("message", "ready"))
             elif message_type == "started":

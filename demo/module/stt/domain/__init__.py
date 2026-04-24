@@ -1,4 +1,5 @@
-from .domain import AudioChunk, SttSessionState, TranscriptKind, TranscriptSegment
+from .models import AudioChunk, TranscriptKind, TranscriptSegment
+from .session import SttSessionState
 
 __all__ = [
     "AudioChunk",

@@ -81,6 +81,25 @@ python stt_client.py
 - `STT_MODEL_NAME`: NeMo pretrained model name
 - `STT_MODEL_PATH`: local `.nemo` file path
 
+## STT 구조
+
+STT는 동작 경로를 유지한 채 내부 책임만 다시 나눴습니다.
+
+- `module/stt/domain/`
+  - 세션 상태와 전사 이벤트 같은 순수 데이터 모델
+- `module/stt/audio/`
+  - 오디오 디코딩, 버퍼링, 스트리밍 window 생성
+- `module/stt/adapters/`
+  - 외부 STT 엔진 연동
+  - 현재는 `NemoAsrAdapter`
+- `module/stt/services/`
+  - 세션 시작, 오디오 ingest, finalize 같은 오케스트레이션
+- `module/stt/transport/`
+  - websocket 프로토콜 처리
+
+기존 `module/stt/api.py`, `service.py`, `audio_buffer.py`, `nemo_adapter.py`, `types.py`는
+호환용 진입점으로 남아 있으므로 기존 import 경로는 계속 사용할 수 있습니다.
+
 ## 실행 방법
 
 프로젝트 루트에서 아래처럼 실행합니다.
