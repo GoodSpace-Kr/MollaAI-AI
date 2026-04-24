@@ -51,6 +51,36 @@ pip install -r my_requirements.txt
 
 TTS 재생은 `ffplay`를 사용합니다. `ffplay`가 없으면 재생 단계에서 오류가 납니다.
 
+### 3. STT 테스트 클라이언트
+
+마이크 오디오를 WebSocket으로 보내는 테스트 클라이언트가 있습니다.
+
+먼저 STT 서버를 띄웁니다.
+
+```bash
+python -m uvicorn stt_app:app --reload
+```
+
+그 다음 다른 터미널에서 클라이언트를 실행합니다.
+
+```bash
+python stt_client.py
+```
+
+기본 연결 주소는 `ws://127.0.0.1:8000/stt/ws`입니다.
+
+### 4. STT 환경변수
+
+협업을 위해 STT 설정은 로컬 shell export보다 `.env` 파일로 관리하는 걸 권장합니다.
+
+- `.env.example`을 `.env`로 복사한 뒤
+- 필요한 값만 각자 로컬에서 채우면 됩니다.
+
+특히 아래 둘 중 하나는 꼭 필요합니다.
+
+- `STT_MODEL_NAME`: NeMo pretrained model name
+- `STT_MODEL_PATH`: local `.nemo` file path
+
 ## 실행 방법
 
 프로젝트 루트에서 아래처럼 실행합니다.
