@@ -62,6 +62,11 @@ def main() -> None:
             if message_type in ("partial", "final"):
                 text = str(payload.get("text", ""))
                 print(f"[{message_type.upper()}] {_shorten(text)}")
+            elif message_type == "llm":
+                text = str(payload.get("text", ""))
+                print(f"[LLM] {_shorten(text)}")
+            elif message_type == "tts":
+                print(f"[TTS] {payload.get('wav_path', '')}")
             elif message_type == "ready":
                 print(payload.get("message", "ready"))
             elif message_type == "started":

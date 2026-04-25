@@ -69,7 +69,7 @@ class SttConfig:
     language: str = "en"
     use_timestamps: bool = False
     speech_rms_threshold: float = 0.01
-    pause_timeout_secs: float = 1.0
+    pause_timeout_secs: float = 2.0
     partial_repeat_threshold: int = 2
 
     @classmethod
@@ -86,6 +86,6 @@ class SttConfig:
             language=os.getenv("STT_LANGUAGE", "en"),
             use_timestamps=os.getenv("STT_USE_TIMESTAMPS", "0") == "1",
             speech_rms_threshold=float(os.getenv("STT_SPEECH_RMS_THRESHOLD", "0.01")),
-            pause_timeout_secs=float(os.getenv("STT_PAUSE_TIMEOUT_SECS", "1.0")),
+            pause_timeout_secs=float(os.getenv("STT_PAUSE_TIMEOUT_SECS", "2.0")),
             partial_repeat_threshold=int(os.getenv("STT_PARTIAL_REPEAT_THRESHOLD", "2")),
         )

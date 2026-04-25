@@ -35,16 +35,17 @@ class QwenChat:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype="auto",
+            torch_dtype=torch.float32,
             #quantization_config=quantization_config,
-            device_map="auto",
             cache_dir=cache_dir,
         )
+        self.model.to("cpu")
 
         self.pipe = pipeline(
             task="text-generation",
             model=self.model,
             tokenizer=self.tokenizer,
+            device=-1,
         )
 
         print("✅ LLM 준비 완료")
