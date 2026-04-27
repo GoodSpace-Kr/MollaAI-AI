@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import subprocess
 import soundfile as sf
@@ -32,6 +33,33 @@ class KokoroTTS:
         if shutil.which("ffplay"):
             subprocess.run(
                 ["ffplay", "-nodisp", "-autoexit", wav_path],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return
+
+        if platform.system() == "Darwin" and shutil.which("afplay"):
+            subprocess.run(
+                ["afplay", wav_path],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return
+
+        if shutil.which("mpv"):
+            subprocess.run(
+                ["mpv", "--no-video", wav_path],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return
+
+        if shutil.which("aplay"):
+            subprocess.run(
+                ["aplay", wav_path],
                 check=False,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
